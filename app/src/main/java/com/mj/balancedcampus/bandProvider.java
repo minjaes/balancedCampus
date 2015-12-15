@@ -23,7 +23,9 @@ import com.aware.utils.DatabaseHelper;
 import java.io.File;
 import java.util.HashMap;
 
-
+/**
+ * provider used to manage phone DB
+ */
 public class bandProvider extends ContentProvider {
 
     public static final int DATABASE_VERSION = 1;

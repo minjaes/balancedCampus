@@ -21,11 +21,9 @@ import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.client.util.DateTime;
 
 import com.google.api.services.calendar.model.*;
-import com.google.api.services.calendar.model.Calendar;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
@@ -39,10 +37,8 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -50,6 +46,10 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ *  Activity class to aggregate the data from DB and upload it to the google calendar.
+ *
+ */
 public class calendarActivity extends Activity {
     GoogleAccountCredential mCredential;
     private TextView mOutputText;
@@ -270,20 +270,11 @@ public class calendarActivity extends Activity {
         }
 
         /**
-         * Fetch a list of the next 10 events from the primary calendar.
-         * @return List of Strings describing returned events.
-         * @throws IOException
+         * Aggregate the data from the DB and upload it to the user's google calendar.
          */
         private List<String> DBToCalendar() throws IOException {
 
-
-
-
             List<String> basic = null;
-            //write to Calendar
-
-
-            //data from band.db
 
             String [] tableColumns = new String[3];
             tableColumns[0] = bandProvider.Band_Data.TIMESTAMP;
@@ -292,8 +283,7 @@ public class calendarActivity extends Activity {
 
 
 
-            //get last update
-
+            //get timstamp for last update
             long lastUpdate = 0;
             java.sql.Timestamp lastUp;
             String [] arg = new String[1];
@@ -356,6 +346,7 @@ public class calendarActivity extends Activity {
             return basic;
         }
 
+        //Move Cursor to unuploaded queried data.
         private Cursor updateOld(Cursor band_data, long lastUpdate){
             band_data.moveToFirst();
 
@@ -394,28 +385,16 @@ public class calendarActivity extends Activity {
             return band_data;
         }
 
-
+        //aggregate data and upload it to the google calendar
         private void uploadData(Cursor band_data, String colorId){
             long stamp = (long)(band_data.getDouble(0));
 
-            java.sql.Timestamp last = new java.sql.Timestamp(2015, 12, 8, 15, 0, 0,0);
-
-            //DateTime input = new DateTime(stamp);
-
-            java.util.Date now = new java.util.Date(stamp);
-
-            DateTime input = new DateTime(now);
             java.sql.Timestamp timestamp = new java.sql.Timestamp((long)band_data.getDouble(0));
-
-
 
             int year = timestamp.getYear();
             int month = timestamp.getMonth();
             int day = timestamp.getDay();
             int hour = timestamp.getHours();
-
-            DateTime startDate = getStartDate(timestamp);
-            DateTime endDate = getEndDate(timestamp);
 
             float sum = band_data.getFloat(1);
             int count = 1;
@@ -435,13 +414,12 @@ public class calendarActivity extends Activity {
                 if(band_data.isLast() || year != year1 || month != month1 ||
                         day != day1 || hour != hour1) {
 
-
                     long milliseconds = timestamp.getTime() + (timestamp.getNanos() / 1000000);
                     long milliseconds2 = milliseconds + 3600000;
-                    java.util.Date date = new java.util.Date(milliseconds);
-                    java.util.Date date2= new java.util.Date(milliseconds2);
-                    DateTime dateTime2 = new DateTime(date2);
-                    DateTime dateTime = new DateTime(date);
+                    java.util.Date startDate = new java.util.Date(milliseconds);
+                    java.util.Date endDate= new java.util.Date(milliseconds2);
+                    DateTime endDateTime = new DateTime(endDate);
+                    DateTime startDateTime = new DateTime(startDate);
 
 
                     Event event = new Event()
@@ -450,12 +428,12 @@ public class calendarActivity extends Activity {
                             .setDescription(band_data.getString(2));
 
                     EventDateTime start = new EventDateTime()
-                            .setDateTime(dateTime)
+                            .setDateTime(startDateTime)
                             .setTimeZone("America/New_York");
                     event.setStart(start);
 
                     EventDateTime end = new EventDateTime()
-                            .setDateTime(dateTime2)
+                            .setDateTime(endDateTime)
                             .setTimeZone("America/New_York");
                     event.setEnd(end);
 
@@ -475,17 +453,13 @@ public class calendarActivity extends Activity {
                     day = timestamp.getDay();
                     hour = timestamp.getHours();
 
-                    startDate = getStartDate(timestamp);
-                    endDate = getEndDate(timestamp);
                     sum = band_data.getFloat(1);
                     count = 1;
                 }
             }
-
-
-
         }
 
+        // check if band Calendar exists and create it if it does not
         private String getCalendarId(String id){
 
             CalendarList calendarList = null;
@@ -521,30 +495,6 @@ public class calendarActivity extends Activity {
             }
             return calendarId;
         }
-
-        private DateTime getStartDate(java.sql.Timestamp timestamp){
-            int year = timestamp.getYear();
-            int month = timestamp.getMonth();
-            int day = timestamp.getDay();
-            int hour = timestamp.getHours();
-
-            Date date= new java.util.Date(year, month, day-1, hour, 0);
-
-            return new DateTime(date);
-        }
-        private DateTime getEndDate(java.sql.Timestamp timestamp){
-
-            int year = timestamp.getYear();
-            int month = timestamp.getMonth();
-            int day = timestamp.getDay();
-            int hour = timestamp.getHours();
-
-            Date date= new java.util.Date(year, month, day-1, hour, 59);
-
-            return new DateTime(date);
-
-        }
-
 
         @Override
         protected void onPreExecute() {

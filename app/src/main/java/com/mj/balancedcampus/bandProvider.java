@@ -28,7 +28,6 @@ public class bandProvider extends ContentProvider {
 
     public static final int DATABASE_VERSION = 1;
 
-
     /**
      * Authority for this content provider
      */
@@ -38,15 +37,11 @@ public class bandProvider extends ContentProvider {
     private static final int BAND_ID = 2;
     public static Cursor band_data;
 
-
     public static final class Band_Data implements BaseColumns {
         private Band_Data() {
         }
 
-        ;
-
         public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/band");
-
 
         public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.aware.plugin.plugin_band.band";
 
@@ -70,7 +65,7 @@ public class bandProvider extends ContentProvider {
      * database tables
      */
 
-    public static final String[] DATABASE_TABLES = {"band"};//,"calories", "pedometer", "UV", "accelerometer"};
+    public static final String[] DATABASE_TABLES = {"band"};
 
     /**
      * Database table fields
@@ -98,34 +93,8 @@ public class bandProvider extends ContentProvider {
         }
         if(databaseHelper != null && (database == null || !database.isOpen())){
             database = databaseHelper.getWritableDatabase();
-
-           /** try{
-                database.execSQL("SELECT * FROM skinTemp");
-            }catch(SQLException e){
-                database.execSQL("CREATE TABLE skinTemp (_id integer primary key autoincrement,timestamp real default 0,device_id text default '',_value float default 0,UNIQUE(timestamp,device_id,_value))");
-            }
-            try{
-                database.execSQL("SELECT * FROM calories");
-            }catch(SQLException e){
-                database.execSQL("CREATE TABLE calories (_id integer primary key autoincrement,timestamp real default 0,device_id text default '',_value float default 0,UNIQUE(timestamp,device_id,_value))");
-            }
-            try{
-                database.execSQL("SELECT * FROM pedometer");
-            }catch(SQLException e){
-                database.execSQL("CREATE TABLE pedometer (_id integer primary key autoincrement,timestamp real default 0,device_id text default '',_value float default 0,UNIQUE(timestamp,device_id,_value))");
-            }
-            try{
-                database.execSQL("SELECT * FROM UV");
-            }catch(SQLException e){
-                database.execSQL("CREATE TABLE UV (_id integer primary key autoincrement,timestamp real default 0,device_id text default '',_value float default 0,UNIQUE(timestamp,device_id,_value))");
-            }
-            try{
-                database.execSQL("SELECT * FROM accelerometer");
-            }catch(SQLException e){
-                database.execSQL("CREATE TABLE accelerometer (_id integer primary key autoincrement,timestamp real default 0,device_id text default '',_value float default 0,UNIQUE(timestamp,device_id,_value))");
-            }
-**/
         }
+
         return( database != null && databaseHelper != null);
     }
 
@@ -208,8 +177,6 @@ public class bandProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unknown URI" + uri);
         }
     }
-
-
 
     @Override
     public boolean onCreate() {

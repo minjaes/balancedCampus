@@ -261,10 +261,7 @@ public class calendarActivity extends Activity {
         @Override
         protected List<String> doInBackground(Void... params) {
             try {
-                //mOutputText.setText("I'm here");
-
-
-                return getDataFromApi();
+                return DBToCalendar();
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
@@ -277,46 +274,11 @@ public class calendarActivity extends Activity {
          * @return List of Strings describing returned events.
          * @throws IOException
          */
-        private List<String> getDataFromApi() throws IOException {
+        private List<String> DBToCalendar() throws IOException {
 
 
 
-            Event event = new Event()
 
-                    .setSummary("just testing")
-                    .setDescription("testing");
-
-            java.util.Calendar calendar = java.util.Calendar.getInstance();
-            java.util.Date now = calendar.getTime();
-            java.sql.Timestamp last = new java.sql.Timestamp(2015, 12, 8, 15, 0, 0,0);
-
-            DateTime input = new DateTime(now);
-
-            DateTime startDate = getStartDate(last);
-            DateTime endDate = getEndDate(last);
-
-
-            EventDateTime start = new EventDateTime()
-                    .setDateTime(input)
-                    .setTimeZone("America/New_York");
-            event.setStart(start);
-
-            EventDateTime end = new EventDateTime()
-                    .setDateTime(input)
-                    .setTimeZone("America/New_York");
-            event.setEnd(end);
-
-            String calendarId = "primary";
-/**
-            try {
-                mOutputText.setText("good");
-                event = mService.events().insert(calendarId, event).execute();
-
-            }catch(IOException e){
-                mOutputText.setText("There is an error");
-            }
-
- **/
             List<String> basic = null;
             //write to Calendar
 
@@ -332,8 +294,8 @@ public class calendarActivity extends Activity {
 
             //get last update
 
-            double lastUpdate = 0;
-
+            long lastUpdate = 0;
+            java.sql.Timestamp lastUp;
             String [] arg = new String[1];
             arg[0] = "lastUpdate";
             Uri content_uri = Uri.parse("content://" + "com.aware.plugin.plugin_band.provider.band" + "/band");
@@ -341,11 +303,14 @@ public class calendarActivity extends Activity {
             band_data.moveToLast();
             //band_data.moveToPrevious();
             try{
-                lastUpdate = band_data.getDouble(0);
+                lastUp = new java.sql.Timestamp((long)band_data.getDouble(0));
+                lastUpdate = lastUp.getTime() + (lastUp.getNanos() / 1000000);
             }catch(Exception e){
                 band_data = getContentResolver().query(content_uri, tableColumns, null, null, null);
                 band_data.moveToFirst();
-                lastUpdate = band_data.getDouble(0);
+
+                lastUp = new java.sql.Timestamp((long)band_data.getDouble(0));
+                lastUpdate = lastUp.getTime() + (lastUp.getNanos() / 1000000);
             }
 
             //Calories
@@ -378,7 +343,7 @@ public class calendarActivity extends Activity {
             arg[0] = "pedometer";
             band_data = getContentResolver().query(content_uri, tableColumns, "type=?", arg, null);
             band_data=updateOld(band_data, lastUpdate);
-            uploadData(band_data,"2");
+            uploadData(band_data, "2");
 
             ContentValues new_data = new ContentValues();
             new_data.put(bandProvider.Band_Data.DEVICE_ID, Aware.getSetting(getApplicationContext(), Aware_Preferences.DEVICE_ID));
@@ -391,10 +356,11 @@ public class calendarActivity extends Activity {
             return basic;
         }
 
-        private Cursor updateOld(Cursor band_data, double lastUpdate){
+        private Cursor updateOld(Cursor band_data, long lastUpdate){
             band_data.moveToFirst();
 
             java.sql.Timestamp last = new java.sql.Timestamp((long)lastUpdate);
+
             int lastyear = last.getYear();
             int lastmonth = last.getMonth();
             int lastday = last.getDay();
@@ -424,12 +390,24 @@ public class calendarActivity extends Activity {
                 hour = timestamp.getHours();
 
             }
+
             return band_data;
         }
+
+
         private void uploadData(Cursor band_data, String colorId){
+            long stamp = (long)(band_data.getDouble(0));
 
+            java.sql.Timestamp last = new java.sql.Timestamp(2015, 12, 8, 15, 0, 0,0);
 
+            //DateTime input = new DateTime(stamp);
+
+            java.util.Date now = new java.util.Date(stamp);
+
+            DateTime input = new DateTime(now);
             java.sql.Timestamp timestamp = new java.sql.Timestamp((long)band_data.getDouble(0));
+
+
 
             int year = timestamp.getYear();
             int month = timestamp.getMonth();
@@ -456,18 +434,28 @@ public class calendarActivity extends Activity {
                 }
                 if(band_data.isLast() || year != year1 || month != month1 ||
                         day != day1 || hour != hour1) {
+
+
+                    long milliseconds = timestamp.getTime() + (timestamp.getNanos() / 1000000);
+                    long milliseconds2 = milliseconds + 3600000;
+                    java.util.Date date = new java.util.Date(milliseconds);
+                    java.util.Date date2= new java.util.Date(milliseconds2);
+                    DateTime dateTime2 = new DateTime(date2);
+                    DateTime dateTime = new DateTime(date);
+
+
                     Event event = new Event()
 
                             .setSummary(String.valueOf(sum / count))
                             .setDescription(band_data.getString(2));
 
                     EventDateTime start = new EventDateTime()
-                            .setDateTime(startDate)
+                            .setDateTime(dateTime)
                             .setTimeZone("America/New_York");
                     event.setStart(start);
 
                     EventDateTime end = new EventDateTime()
-                            .setDateTime(endDate)
+                            .setDateTime(dateTime2)
                             .setTimeZone("America/New_York");
                     event.setEnd(end);
 
@@ -537,7 +525,7 @@ public class calendarActivity extends Activity {
         private DateTime getStartDate(java.sql.Timestamp timestamp){
             int year = timestamp.getYear();
             int month = timestamp.getMonth();
-            int day = timestamp.getDay()+7;
+            int day = timestamp.getDay();
             int hour = timestamp.getHours();
 
             Date date= new java.util.Date(year, month, day-1, hour, 0);
@@ -548,7 +536,7 @@ public class calendarActivity extends Activity {
 
             int year = timestamp.getYear();
             int month = timestamp.getMonth();
-            int day = timestamp.getDay()+7;
+            int day = timestamp.getDay();
             int hour = timestamp.getHours();
 
             Date date= new java.util.Date(year, month, day-1, hour, 59);
